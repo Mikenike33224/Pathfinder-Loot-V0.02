@@ -207,6 +207,32 @@
 
   .btn-table:active { transform: translateY(0); }
 
+  .btn-table.relic {
+    background: linear-gradient(160deg, #1a4a1a, #0f2e0f);
+    color: var(--parchment);
+    box-shadow:
+      0 0 0 1px #3a8a3a,
+      0 0 0 2px #0f2e0f,
+      4px 4px 12px rgba(0,0,0,0.5);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+
+  .btn-table.relic:hover {
+    background: linear-gradient(160deg, #22661e, #154d12);
+    box-shadow:
+      0 0 0 1px #55aa55,
+      0 0 0 2px #0f2e0f,
+      4px 4px 16px rgba(26, 74, 26, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .table-badge.relic {
+    background: #1a4a1a;
+    color: var(--parchment);
+    box-shadow: 0 0 0 1px #3a8a3a;
+  }
+
+
   /* ── RESULTS SCREEN ── */
   #results-screen { display: none; }
 
@@ -399,6 +425,7 @@
       <div class="table-buttons">
         <button class="btn-table martial" onclick="rollTable('martial')">⚔ Martial</button>
         <button class="btn-table spellcaster" onclick="rollTable('spellcaster')">✦ Spellcaster</button>
+        <button class="btn-table relic" onclick="rollTable('relic')">✦ Relic</button>
       </div>
     </div>
 
@@ -690,6 +717,93 @@ function rollSpellcaster() {
   if (result === "Player Choice") return { type: "player_choice", label: "Scroll", text: "Player selects their own scroll" };
   if (result === "Equipment") return rollEquipment();
   return { type: "potion", label: "Potion", text: pick(POTIONS) };
+}
+
+
+// ─────────────────────────────────────────────
+//  RELICS
+// ─────────────────────────────────────────────
+
+const COMMON_RELICS = [
+  ["Burning Blood",      "At the end of combat heal 6 HP"],
+  ["Amethyst Aubergine", "Gain 15 extra gold after every combat"],
+  ["Anchor",             "You have +10 AC for the first turn of combat"],
+  ["Bag of Marbles",     "ALL enemies take an extra 1d4 damage from ALL sources for the first turn of combat"],
+  ["Blood Vial",         "At the start of combat you heal 2 HP"],
+  ["Bronze Scales",      "Whenever an enemy makes a melee attack against you they take 3 damage"],
+  ["Centennial Puzzle",  "When you lose HP for the first time each combat you gain 1 extra standard action"],
+  ["Happy Flower",       "Every 3 turns of combat you gain an extra standard action"],
+  ["Lantern",            "On the first turn of combat you gain 1 extra standard action"],
+  ["Meal Ticket",        "When you enter a shop you heal 15 HP"],
+  ["Oddly Smooth Stone", "+1 to your AC"],
+  ["Pendulum",           "Every 3 turns of combat you gain an extra standard action"],
+  ["Red Mask",           "At the start of combat ALL enemies are weakened"],
+  ["Regal Pillow",       "When you rest you heal an additional 15 HP"],
+  ["Strawberry",         "You gain 7 max HP"],
+  ["Vajra",              "All of your attacks deal +1 damage"],
+  ["Venerable Tea Set",  "After resting, on your first turn of the next combat you gain 2 additional standard actions"],
+  ["Red Skull",          "When you are below 50% HP ALL of your attacks deal +3 damage"],
+  ["Snecko Skull",       "When you apply a debuff you apply 1 extra round of that debuff"],
+  ["Candelabra",         "On your second turn of combat you get 2 additional standard actions"],
+  ["Gremlin Horn",       "When an enemy dies you gain an extra standard action on your next turn"],
+  ["Horn Cleat",         "At the start of your second turn you gain +14 AC"],
+  ["Kusarigama",         "If you attack 3 times in a single turn you deal 1d6 damage to a random enemy"],
+  ["Mercury Hourglass",  "At the start of your turn deal 3 damage to all enemies"],
+  ["Nunchaku",           "When you make 5 successful hits in a single combat you gain an extra standard action"],
+  ["Ornamental Fan",     "If you make 3 attacks in a single turn you gain +4 AC until your next turn"],
+  ["Pantograph",         "Heal 25 HP at the start of a boss combat"],
+  ["Pear",               "Gain 10 max HP"],
+  ["Pen Nib",            "When you make 5 successful hits in a single combat the 5th hit deals double damage"],
+  ["Reptile Trinket",    "When you use a potion you gain +3 damage to all attacks this turn"],
+  ["Self-Forming Clay",  "When you lose HP you gain +3 AC on your next turn"],
+  ["Mr. Staby",          "+1 sneak attack to prone enemies"],
+  ["Mr. Yelly",          "+1 to attack against enemies you intimidate in combat"],
+  ["Mr. Spelly",         "If you cast the same temporary spell 2 times in a row you get a 3rd cast of it for free"],
+  ["Choice Specs",       "You are locked into casting the first spell you cast each combat, but that spell is 50% more effective"],
+];
+
+const RARE_RELICS = [
+  ["Art of War",       "If you do not attack during your turn gain 1 additional standard action next turn"],
+  ["Beating Remnant",  "You cannot lose more than 20 HP in a single turn"],
+  ["Captain's Wheel",  "At the start of your third turn you gain 18 AC"],
+  ["Chandelier",       "At the start of your 3rd turn gain 3 extra standard actions"],
+  ["Girya",            "When at a rest site, you can forgo resting to instead gain a permanent +1 to ALL damage you deal (max 3 times)"],
+  ["Ice Cream",        "Standard Actions are conserved between turns"],
+  ["Kunai",            "When you make 3 attacks in a single turn you gain +1 AC"],
+  ["Lizard Tail",      "When your HP is reduced to 0, you heal to 50% of your max HP (Only works once)"],
+  ["Mango",            "Gain 14 max HP"],
+  ["Meat on the Bone", "If your HP is at or below 50% at the end of combat you heal 12 HP"],
+  ["Old Coin",         "Gain 300 gold"],
+  ["Prayer Wheel",     "Normal enemies drop an additional reward"],
+  ["Rainbow Ring",     "The first time you attack or use a skill each turn you gain +1 damage from all sources and +1 AC until end of combat"],
+  ["Shovel",           "At rest sites you can forgo resting to dig up a random relic"],
+  ["Shuriken",         "When you make 3 attacks in a single turn you gain +1 damage from all sources until end of combat"],
+  ["Stone Calendar",   "At the end of turn 7 you deal 52 damage to ALL enemies"],
+  ["Tungsten Rod",     "When you would lose HP lose 1 less"],
+  ["Unsettling Lamp",  "Each combat, the first time you apply debuffs to an enemy double the effect of it"],
+  ["White Star",       "Elite fights drop an additional reward"],
+  ["Ruined Helmet",    "Whenever you gain +1 damage from all sources gain +2 instead"],
+  ["Ivory Tile",       "When you spend 3 standard actions in a single turn you gain an additional standard action"],
+  ["Booming Conch",    "At the start of elite combats you immediately gain 2 extra standard actions"],
+  ["Cursed Pearl",     "Upon pickup you gain 333 gold but you gain a random curse"],
+  ["Golden Pearl",     "Upon pickup gain 150 gold"],
+  ["Lava Rock",        "The first 5 floor bosses drop an additional relic"],
+  ["Neow's Bones",     "Upon pickup gain two random relics, also gain a random curse"],
+  ["Nutritious Oyster","Gain 11 max HP"],
+  ["Pomander",         "Upon pickup, add a +1 enchantment to a piece of equipment"],
+  ["Stone Humidifier", "When you rest at a rest site you gain 5 max HP"],
+  ["Driftwood",        "You may reroll each combat reward once"],
+  ["Diamond Diadem",   "When you do 2 or fewer attacks in a turn you take half damage from enemies"],
+  ["Fur Coat",         "Mark 7 combats on the map. Those enemies have 1 HP (Cannot be elites or floor boss)"],
+  ["Looming Fruit",    "Gain 31 max HP"],
+  ["Signet Ring",      "Gain 999 gold"],
+];
+
+function rollRelic() {
+  const rarity = weighted([["Common", 70], ["Rare", 30]]);
+  const pool = rarity === "Common" ? COMMON_RELICS : RARE_RELICS;
+  const [name, effect] = pick(pool);
+  return { type: "relic", rarity, name, effect };
 }
 
 // ─────────────────────────────────────────────
